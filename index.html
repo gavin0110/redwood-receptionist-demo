@@ -78,12 +78,6 @@
       <button id="call">Call the receptionist</button>
       <div class="status" id="statusRow" hidden><span class="dot" id="dot"></span><span id="statusText"></span></div>
       <div class="err" id="err" hidden></div>
-      <div id="micDiag" style="margin-top:14px;font-size:12.5px;color:var(--muted)">
-        <a href="#" id="micCheck" style="color:#58a6ff">Check microphone</a>
-        <div id="micResult" hidden style="margin-top:8px;font-family:ui-monospace,Menlo,monospace;
-          font-size:12px;color:var(--ink);background:#0b0f14;border:1px solid var(--line);
-          border-radius:6px;padding:10px;word-break:break-word"></div>
-      </div>
       <div id="transcript"></div>
     </section>
 
@@ -208,43 +202,6 @@
     vapi = inst; wire(vapi);
     return vapi;
   }
-
-  document.getElementById('micCheck').addEventListener('click', function(ev){
-    ev.preventDefault();
-    var out = document.getElementById('micResult');
-    out.hidden = false; out.textContent = 'Checking, speak for a few seconds...';
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      out.textContent = 'getUserMedia is not available on this page.'; return;
-    }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
-      var track = stream.getAudioTracks()[0];
-      var Ctx = window.AudioContext || window.webkitAudioContext;
-      var ctx = new Ctx();
-      var an = ctx.createAnalyser(); an.fftSize = 2048;
-      ctx.createMediaStreamSource(stream).connect(an);
-      var data = new Uint8Array(an.fftSize), peak = 0, t0 = Date.now();
-      var iv = setInterval(function(){
-        an.getByteTimeDomainData(data);
-        for (var i = 0; i < data.length; i++) {
-          var v = Math.abs(data[i] - 128); if (v > peak) peak = v;
-        }
-        if (Date.now() - t0 > 4000) {
-          clearInterval(iv);
-          out.textContent =
-            'device: ' + (track ? track.label : 'NO TRACK') +
-            '\nreadyState: ' + (track ? track.readyState : '-') +
-            '  muted: ' + (track ? track.muted : '-') +
-            '  enabled: ' + (track ? track.enabled : '-') +
-            '\naudioContext: ' + ctx.state +
-            '\nPEAK LEVEL: ' + peak + ' / 128   ' + (peak > 2 ? '(audio IS flowing)' : '(SILENT)');
-          stream.getTracks().forEach(function(t){ t.stop(); });
-          ctx.close();
-        }
-      }, 100);
-    }).catch(function(e){
-      out.textContent = 'getUserMedia FAILED\n' + e.name + ': ' + e.message;
-    });
-  });
 
   btn.addEventListener('click', function(){
     if (active) { if (vapi) vapi.stop(); return; }
