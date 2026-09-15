@@ -132,11 +132,18 @@
   function row(l,v){ return '<dt>'+l+'</dt><dd>'+v+'</dd>'; }
 
   function addLine(role, text){
-    var d = document.createElement('div'); d.className = 'line';
-    var w = document.createElement('span'); w.className = 'who';
-    w.textContent = role === 'assistant' ? 'Morgan' : 'You';
-    d.appendChild(w); d.appendChild(document.createTextNode(text));
-    tr.appendChild(d); tr.scrollTop = tr.scrollHeight;
+    var last = tr.lastElementChild;
+    if (last && last.getAttribute('data-role') === role) {
+      last.lastChild.nodeValue += ' ' + text;
+    } else {
+      var d = document.createElement('div'); d.className = 'line';
+      d.setAttribute('data-role', role);
+      var w = document.createElement('span'); w.className = 'who';
+      w.textContent = role === 'assistant' ? 'Morgan' : 'You';
+      d.appendChild(w); d.appendChild(document.createTextNode(text));
+      tr.appendChild(d);
+    }
+    tr.scrollTop = tr.scrollHeight;
   }
 
   function render(state){
@@ -206,6 +213,7 @@
   btn.addEventListener('click', function(){
     if (active) { if (vapi) vapi.stop(); return; }
     err.hidden = true;
+    tr.textContent = '';
     var inst = getInstance();
     if (!inst) {
       setStatus('Call did not start', 'err');
